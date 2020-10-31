@@ -28,7 +28,7 @@ class _AnimatedListScreenState extends State<AnimatedListScreen>
 
   @override
   void initState() {
-    const kItemsLength = 20;
+    const kItemsLength = 5; // it was 20
     super.initState();
     _list = ListModel<int>(
       listKey: _listKey,
