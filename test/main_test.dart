@@ -25,6 +25,8 @@ class MockAuthenticationCubit extends MockBloc<AuthenticationState>
 
 class MockGitHubRepository extends Mock implements GitHubRepository {}
 
+class MockDatabaseRepository extends Mock implements DatabaseRepository {}
+
 void main() {
   group('App', () {
     AuthenticationRepository authenticationRepository;
@@ -34,6 +36,7 @@ void main() {
     setUp(() {
       authenticationRepository = MockAuthenticationRepository();
       gitHubRepository = MockGitHubRepository();
+      databaseRepository = MockDatabaseRepository();
       when(authenticationRepository.user).thenAnswer(
         (_) => const Stream.empty(),
       );

@@ -31,11 +31,11 @@ class HomeScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Avatar(photo: user.photo),
-            const SizedBox(height: 4.0),
+            const SizedBox(height: 4),
             Text(user.email, style: textTheme.headline6),
-            const SizedBox(height: 4.0),
+            const SizedBox(height: 4),
             Text(user.name ?? '', style: textTheme.headline5),
-            const SizedBox(height: 4.0),
+            const SizedBox(height: 4),
             _CommonRaisedButton(
               title: 'GitHub Repositories',
               buttonKey:
@@ -43,11 +43,18 @@ class HomeScreen extends StatelessWidget {
               onPressed: () =>
                   navigator.push<void>(GitHubRepositoriesScreen().getRoute()),
             ),
-            const SizedBox(height: 4.0),
+            const SizedBox(height: 4),
             _CommonRaisedButton(
-              title: 'My Todos',
-              buttonKey: const Key('homeScreen_myTodos_raisedButton'),
-              onPressed: () => navigator.push<void>(MyTodosScreen().getRoute()),
+              title: 'Todos',
+              buttonKey: const Key('homeScreen_todos_raisedButton'),
+              onPressed: () => navigator.push<void>(TodosScreen().getRoute()),
+            ),
+            const SizedBox(height: 4),
+            _CommonRaisedButton(
+              title: 'Animated List',
+              buttonKey: const Key('homeScreen_animatedList_raisedButton'),
+              onPressed: () =>
+                  navigator.push<void>(AnimatedListScreen().getRoute()),
             ),
           ],
         ),
@@ -70,9 +77,9 @@ class _CommonRaisedButton extends StatelessWidget {
       key: buttonKey,
       child: Text(
         title,
-        style: TextStyle(color: Colors.white),
+        style: const TextStyle(color: Colors.white),
       ),
-      shape: StadiumBorder(),
+      shape: const StadiumBorder(),
       color: theme.accentColor,
       onPressed: onPressed,
     );

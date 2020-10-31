@@ -28,7 +28,7 @@ class GitHubRepositoriesScreen extends StatelessWidget {
     );
   }
 
-  static void _loadRepositories(GitHubRepositoriesCubit cubit) async {
+  static Future<void> _loadRepositories(GitHubRepositoriesCubit cubit) async {
     final result = await cubit.load();
     if (result) return;
     BotToast.showNotification(
@@ -43,7 +43,7 @@ class GitHubRepositoriesScreen extends StatelessWidget {
           close();
           _loadRepositories(cubit);
         },
-        child: const Text('REPEAT'),
+        child: Text('Repeat'.toUpperCase()),
       ),
     );
   }
@@ -71,10 +71,10 @@ class GitHubRepositoriesBody extends StatelessWidget {
                       return Center(
                         child: FlatButton(
                             child: Text(
-                              'REFRESH',
+                              'Refresh'.toUpperCase(),
                               style: TextStyle(color: theme.primaryColor),
                             ),
-                            shape: StadiumBorder(),
+                            shape: const StadiumBorder(),
                             onPressed: () {
                               GitHubRepositoriesScreen._loadRepositories(
                                 getBloc<GitHubRepositoriesCubit>(context),
@@ -131,7 +131,7 @@ class GitHubRepositoriesItem extends StatelessWidget {
     );
   }
 
-  void _toggleStar(GitHubRepositoriesCubit cubit) async {
+  Future<void> _toggleStar(GitHubRepositoriesCubit cubit) async {
     final value = !item.viewerHasStarred;
     final result = await cubit.toggleStar(
       id: item.id,
@@ -152,7 +152,7 @@ class GitHubRepositoriesItem extends StatelessWidget {
           close();
           _toggleStar(cubit);
         },
-        child: const Text('REPEAT'),
+        child: Text('Repeat'.toUpperCase()),
       ),
     );
   }

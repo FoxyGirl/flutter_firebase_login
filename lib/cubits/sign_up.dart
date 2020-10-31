@@ -1,7 +1,10 @@
 import 'package:bloc/bloc.dart';
+import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:equatable/equatable.dart';
 import 'package:formz/formz.dart';
 import 'package:flutter_firebase_login/import.dart';
+
+part 'sign_up.g.dart';
 
 class SignUpCubit extends Cubit<SignUpState> {
   SignUpCubit(this.authenticationRepository)
@@ -11,45 +14,45 @@ class SignUpCubit extends Cubit<SignUpState> {
   final AuthenticationRepository authenticationRepository;
 
   void emailChanged(String value) {
-    final email = EmailModel.dirty(value);
+    final emailInput = EmailInputModel.dirty(value);
     emit(state.copyWith(
-      email: email,
+      emailInput: emailInput,
       status: Formz.validate([
-        email,
-        state.password,
-        state.confirmedPassword,
+        emailInput,
+        state.passwordInput,
+        state.confirmedPasswordInput,
       ]),
     ));
   }
 
   void passwordChanged(String value) {
-    final password = PasswordModel.dirty(value);
-    final confirmedPassword = ConfirmedPasswordModel.dirty(
-      password: password.value,
-      value: state.confirmedPassword.value,
+    final passwordInput = PasswordInputModel.dirty(value);
+    final confirmedPasswordInput = ConfirmedPasswordInputModel.dirty(
+      password: passwordInput.value,
+      value: state.confirmedPasswordInput.value,
     );
     emit(state.copyWith(
-      password: password,
-      confirmedPassword: confirmedPassword,
+      passwordInput: passwordInput,
+      confirmedPasswordInput: confirmedPasswordInput,
       status: Formz.validate([
-        state.email,
-        password,
-        state.confirmedPassword,
+        state.emailInput,
+        passwordInput,
+        state.confirmedPasswordInput,
       ]),
     ));
   }
 
   void confirmedPasswordChanged(String value) {
-    final confirmedPassword = ConfirmedPasswordModel.dirty(
-      password: state.password.value,
+    final confirmedPasswordInput = ConfirmedPasswordInputModel.dirty(
+      password: state.passwordInput.value,
       value: value,
     );
     emit(state.copyWith(
-      confirmedPassword: confirmedPassword,
+      confirmedPasswordInput: confirmedPasswordInput,
       status: Formz.validate([
-        state.email,
-        state.password,
-        confirmedPassword,
+        state.emailInput,
+        state.passwordInput,
+        confirmedPasswordInput,
       ]),
     ));
   }
@@ -59,8 +62,8 @@ class SignUpCubit extends Cubit<SignUpState> {
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
     try {
       await authenticationRepository.signUp(
-        email: state.email.value,
-        password: state.password.value,
+        email: state.emailInput.value,
+        password: state.passwordInput.value,
       );
       emit(state.copyWith(status: FormzStatus.submissionSuccess));
     } on Exception {
@@ -69,35 +72,22 @@ class SignUpCubit extends Cubit<SignUpState> {
   }
 }
 
-enum ConfirmPasswordValidationError { invalid }
-
+@CopyWith()
 class SignUpState extends Equatable {
   const SignUpState({
-    this.email = const EmailModel.pure(),
-    this.password = const PasswordModel.pure(),
-    this.confirmedPassword = const ConfirmedPasswordModel.pure(),
+    this.emailInput = const EmailInputModel.pure(),
+    this.passwordInput = const PasswordInputModel.pure(),
+    this.confirmedPasswordInput = const ConfirmedPasswordInputModel.pure(),
     this.status = FormzStatus.pure,
   });
 
-  final EmailModel email;
-  final PasswordModel password;
-  final ConfirmedPasswordModel confirmedPassword;
+  final EmailInputModel emailInput;
+  final PasswordInputModel passwordInput;
+  final ConfirmedPasswordInputModel confirmedPasswordInput;
+  // TODO: @CopyWithField(required: true)
   final FormzStatus status;
 
   @override
-  List<Object> get props => [email, password, confirmedPassword, status];
-
-  SignUpState copyWith({
-    EmailModel email,
-    PasswordModel password,
-    ConfirmedPasswordModel confirmedPassword,
-    FormzStatus status,
-  }) {
-    return SignUpState(
-      email: email ?? this.email,
-      password: password ?? this.password,
-      confirmedPassword: confirmedPassword ?? this.confirmedPassword,
-      status: status ?? this.status,
-    );
-  }
+  List<Object> get props =>
+      [emailInput, passwordInput, confirmedPasswordInput, status];
 }

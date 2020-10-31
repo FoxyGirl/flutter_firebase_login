@@ -4,28 +4,26 @@ import 'package:flutter_firebase_login/import.dart';
 // ignore: uri_does_not_exist
 import '../local.dart';
 
-const _kEnableWebsockets = false;
-// const _kRepositoriesLimit = 8;
+const _kEnableWebsockets = true;
 
 class DatabaseRepository {
   DatabaseRepository({GraphQLClient client}) : _client = client ?? _getClient();
 
   final GraphQLClient _client;
 
-  Future<List<TodoModel>> readMyTodos({DateTime createdAt, int limit}) async {
-    final queryResult = await _client
-        .query(QueryOptions(
-          documentNode: _API.readMyTodos,
-          variables: {
-            'user_id': kDatabaseUserId,
-            'created_at':
-                (createdAt ?? DateTime.now().toUtc()).toIso8601String(),
-            'limit': limit,
-          },
-          fetchPolicy: FetchPolicy.noCache,
-          errorPolicy: ErrorPolicy.all,
-        ))
-        .timeout(kGraphQLQueryTimeoutDuration);
+  Future<List<TodoModel>> readTodos({DateTime createdAt, int limit}) async {
+    final options = QueryOptions(
+      documentNode: _API.readTodos,
+      variables: {
+        'user_id': kDatabaseUserId,
+        'created_at': (createdAt ?? DateTime.now().toUtc()).toIso8601String(),
+        'limit': limit,
+      },
+      fetchPolicy: FetchPolicy.noCache,
+      errorPolicy: ErrorPolicy.all,
+    );
+    final queryResult =
+        await _client.query(options).timeout(kGraphQLTimeoutDuration);
     if (queryResult.hasException) {
       throw queryResult.exception;
     }
@@ -36,6 +34,50 @@ class DatabaseRepository {
       items.add(TodoModel.fromJson(dataItem));
     }
     return items;
+  }
+
+  Stream<int> get fetchNewTodoNotification {
+    final operation = Operation(
+      documentNode: _API.fetchNewTodoNotification,
+      variables: {'user_id': kDatabaseUserId},
+      // extensions: null,
+      // operationName: 'FetchNewTodoNotification',
+    );
+    return _client.subscribe(operation).map((FetchResult fetchResult) {
+      return fetchResult.data['todos'][0]['id'] as int;
+    });
+  }
+
+  Future<int> deleteTodo(int id) async {
+    final options = MutationOptions(
+      documentNode: _API.deleteTodo,
+      variables: {'id': id},
+      fetchPolicy: FetchPolicy.noCache,
+      errorPolicy: ErrorPolicy.all,
+    );
+    final mutationResult =
+        await _client.mutate(options).timeout(kGraphQLTimeoutDuration);
+    if (mutationResult.hasException) {
+      throw mutationResult.exception;
+    }
+    return mutationResult.data['delete_todos_by_pk']['id'] as int;
+  }
+
+  Future<TodoModel> createTodo(String title) async {
+    final options = MutationOptions(
+      documentNode: _API.createTodo,
+      variables: {'title': title},
+      fetchPolicy: FetchPolicy.noCache,
+      errorPolicy: ErrorPolicy.all,
+    );
+    final mutationResult =
+        await _client.mutate(options).timeout(kGraphQLTimeoutDuration);
+    if (mutationResult.hasException) {
+      throw mutationResult.exception;
+    }
+    final dataItem =
+        mutationResult.data['insert_todos_one'] as Map<String, dynamic>;
+    return TodoModel.fromJson(dataItem);
   }
 }
 
@@ -53,9 +95,12 @@ GraphQLClient _getClient() {
       config: SocketClientConfig(
         autoReconnect: true,
         inactivityTimeout: const Duration(seconds: 15),
-        // initPayload: () async => {
-        //   'headers': {'Authorization': 'Bearer ' + token}
-        // },
+        initPayload: () async {
+          print('initPayload');
+          return {
+            'headers': {'Authorization': 'Bearer $kDatabaseToken'},
+          };
+        },
       ),
     );
     link = link.concat(websocketLink);
@@ -73,12 +118,43 @@ GraphQLClient _getClient() {
 }
 
 class _API {
-  static final readMyTodos = gql(r'''
-    query ReadMyTodos($user_id: String!, $created_at: timestamptz!, $limit: Int!) {
+  static final createTodo = gql(r'''
+    mutation CreateTodo($title: String) {
+      insert_todos_one(object: {title: $title}) {
+        ...TodosFields
+      }
+    }
+  ''')..definitions.addAll(fragments.definitions);
+
+  static final deleteTodo = gql(r'''
+    mutation DeleteTodo($id: Int!) {
+      delete_todos_by_pk(id: $id) {
+        id
+      }
+    }
+  ''');
+
+  static final fetchNewTodoNotification = gql(r'''
+    subscription FetchNewTodoNotification($user_id: String!) {
       todos(
         where: {
           user_id: {_eq: $user_id},
-          created_at: {_lte: $created_at}
+          # is_public: {_eq: true},
+        }, 
+        order_by: {created_at: desc},
+        limit: 1, 
+      ) {
+        id
+      }
+    }
+  ''');
+
+  static final readTodos = gql(r'''
+    query ReadTodos($user_id: String!, $created_at: timestamptz!, $limit: Int!) {
+      todos(
+        where: {
+          user_id: {_eq: $user_id},
+          created_at: {_lte: $created_at},
         },
         order_by: { created_at: desc },
         limit: $limit,
@@ -93,66 +169,7 @@ class _API {
       # __typename
       id
       title
-      is_completed
       created_at
     }
   ''');
-
-  // static final readRepositories = gql(r'''
-  //   query ReadRepositories($nRepositories: Int!) {
-  //     viewer {
-  //       repositories(last: $nRepositories) {
-  //         nodes {
-  //           ...RepositoryFields
-  //         }
-  //       }
-  //     }
-  //   }
-  // ''')..definitions.addAll(fragments.definitions);
-
-  // static final addStar = gql(r'''
-  //   mutation AddStar($starrableId: ID!) {
-  //     action: addStar(input: {starrableId: $starrableId}) {
-  //       starrable {
-  //         viewerHasStarred
-  //       }
-  //     }
-  //   }
-  // ''');
-
-  // static final removeStar = gql(r'''
-  //   mutation RemoveStar($starrableId: ID!) {
-  //     action: removeStar(input: {starrableId: $starrableId}) {
-  //       starrable {
-  //         viewerHasStarred
-  //       }
-  //     }
-  //   }
-  // ''');
-
-  // static final searchRepositories = gql(r'''
-  //   query SearchRepositories($nRepositories: Int!, $query: String!, $cursor: String) {
-  //     search(last: $nRepositories, query: $query, type: REPOSITORY, after: $cursor) {
-  //       nodes {
-  //         # __typename
-  //         ... on Repository {
-  //           name
-  //           shortDescriptionHTML
-  //           viewerHasStarred
-  //           stargazers {
-  //             totalCount
-  //           }
-  //           forks {
-  //             totalCount
-  //           }
-  //           updatedAt
-  //         }
-  //       }
-  //       pageInfo {
-  //         endCursor
-  //         hasNextPage
-  //       }
-  //     }
-  //   }
-  // '''); // ..definitions.addAll(fragments.definitions);
 }

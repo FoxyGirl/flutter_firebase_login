@@ -1,7 +1,10 @@
 import 'package:bloc/bloc.dart';
+import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:equatable/equatable.dart';
 import 'package:formz/formz.dart';
 import 'package:flutter_firebase_login/import.dart';
+
+part 'login.g.dart';
 
 class LoginCubit extends Cubit<LoginState> {
   LoginCubit(this.authenticationRepository)
@@ -11,18 +14,18 @@ class LoginCubit extends Cubit<LoginState> {
   final AuthenticationRepository authenticationRepository;
 
   void emailChanged(String value) {
-    final email = EmailModel.dirty(value);
+    final emailInput = EmailInputModel.dirty(value);
     emit(state.copyWith(
-      email: email,
-      status: Formz.validate([email, state.password]),
+      emailInput: emailInput,
+      status: Formz.validate([emailInput, state.passwordInput]),
     ));
   }
 
   void passwordChanged(String value) {
-    final password = PasswordModel.dirty(value);
+    final passwordInput = PasswordInputModel.dirty(value);
     emit(state.copyWith(
-      password: password,
-      status: Formz.validate([state.email, password]),
+      passwordInput: passwordInput,
+      status: Formz.validate([state.emailInput, passwordInput]),
     ));
   }
 
@@ -31,8 +34,8 @@ class LoginCubit extends Cubit<LoginState> {
     emit(state.copyWith(status: FormzStatus.submissionInProgress));
     try {
       await authenticationRepository.logInWithEmailAndPassword(
-        email: state.email.value,
-        password: state.password.value,
+        email: state.emailInput.value,
+        password: state.passwordInput.value,
       );
       emit(state.copyWith(status: FormzStatus.submissionSuccess));
     } on Exception {
@@ -53,29 +56,19 @@ class LoginCubit extends Cubit<LoginState> {
   }
 }
 
+@CopyWith()
 class LoginState extends Equatable {
   const LoginState({
-    this.email = const EmailModel.pure(),
-    this.password = const PasswordModel.pure(),
+    this.emailInput = const EmailInputModel.pure(),
+    this.passwordInput = const PasswordInputModel.pure(),
     this.status = FormzStatus.pure,
   });
 
-  final EmailModel email;
-  final PasswordModel password;
+  final EmailInputModel emailInput;
+  final PasswordInputModel passwordInput;
+  // TODO: @CopyWithField(required: true)
   final FormzStatus status;
 
   @override
-  List<Object> get props => [email, password, status];
-
-  LoginState copyWith({
-    EmailModel email,
-    PasswordModel password,
-    FormzStatus status,
-  }) {
-    return LoginState(
-      email: email ?? this.email,
-      password: password ?? this.password,
-      status: status ?? this.status,
-    );
-  }
+  List<Object> get props => [emailInput, passwordInput, status];
 }
