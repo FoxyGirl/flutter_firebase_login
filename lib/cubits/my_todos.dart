@@ -10,7 +10,7 @@ class MyTodosCubit extends Cubit<MyTodosState> {
   final DatabaseRepository databaseRepository;
 
   Future<bool> load({bool isRefresh = false}) async {
-    const kLimit = 4;
+    const kLimit = 5;
     var result = true;
     emit(state.copyWith(status: MyTodosStatus.busy));
     try {
@@ -33,6 +33,7 @@ class MyTodosCubit extends Cubit<MyTodosState> {
         nextDateTime: nextDateTime,
       ));
     } catch (error) {
+      print('Cubit Error getting data: $error');
       result = false;
     }
     return result;

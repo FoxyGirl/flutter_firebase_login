@@ -29,6 +29,7 @@ void main() {
   group('App', () {
     AuthenticationRepository authenticationRepository;
     GitHubRepository gitHubRepository;
+    DatabaseRepository databaseRepository;
 
     setUp(() {
       authenticationRepository = MockAuthenticationRepository();
@@ -43,6 +44,7 @@ void main() {
         () => App(
           authenticationRepository: null,
           gitHubRepository: null,
+          databaseRepository: null,
         ),
         throwsAssertionError,
       );
@@ -53,6 +55,7 @@ void main() {
         App(
           authenticationRepository: authenticationRepository,
           gitHubRepository: gitHubRepository,
+          databaseRepository: databaseRepository,
         ),
       );
       expect(find.byType(AppView), findsOneWidget);
